@@ -1,6 +1,6 @@
 import { Task } from "../models/tasks.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTask = asyncHandler(async(req, res) => {
@@ -12,7 +12,8 @@ const createTask = asyncHandler(async(req, res) => {
 
     const todo = await Task.create({
         task,
-        completed
+        completed,
+        owner: req.user?._id
     })
 
     /* 
@@ -34,7 +35,7 @@ const createTask = asyncHandler(async(req, res) => {
 })
 
 const getTasks = asyncHandler(async(req, res) => {
-    const tasks = await Task.find({})
+    const tasks = await Task.find({owner: req.user?._id})
 
     if (!tasks) {
         throw new ApiError(400, "Tasks not found")
@@ -64,7 +65,8 @@ const updateTask = asyncHandler(async(req, res) => {
             completed
         },
         {new: true}
-    )
+    ).where('owner', req.user?._id)
+
     if (!updatedTask) {
         throw new ApiError(400, 'Failed to update the task')
     }
@@ -84,7 +86,7 @@ const deleteTask = asyncHandler(async(req, res) => {
 
     const deletedTask = await Task.findByIdAndDelete(
         id
-    )
+    ).where('owner', req.user?._id)
     if (!deletedTask) {
         throw new ApiError(400, "Failed to delete the task")
     }
@@ -95,4 +97,20 @@ const deleteTask = asyncHandler(async(req, res) => {
 
 })
 
-export {createTask, getTasks, updateTask, deleteTask}
+const getTask = asyncHandler(async(req, res) => {
+    const id = req.params?.id
+    if (!id) {
+        throw new ApiError(400, "Task not found")
+    }
+
+    const task = await Task.findById(id)
+    if (!task) {
+        throw new ApiError(400, "Failed to fetch the task")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, "Fetched Task Successfully", task)
+    )
+})
+
+export {createTask, getTasks, updateTask, deleteTask, getTask}
