@@ -98,6 +98,7 @@ const deleteTask = asyncHandler(async(req, res) => {
 })
 
 const getTask = asyncHandler(async(req, res) => {
+    // const {id} = req.params
     const id = req.params?.id
     if (!id) {
         throw new ApiError(400, "Task not found")
